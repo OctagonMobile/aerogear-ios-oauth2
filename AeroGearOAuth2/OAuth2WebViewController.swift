@@ -17,22 +17,23 @@
 
 import Foundation
 
+import WebKit
 import UIKit
 /**
 OAuth2WebViewController is a UIViewController to be used when the Oauth2 flow used an embedded view controller
 rather than an external browser approach.
 */
-open class OAuth2WebViewController: UIViewController, UIWebViewDelegate {
+open class OAuth2WebViewController: UIViewController {
     /// Login URL for OAuth.
     var targetURL: URL!
     /// WebView instance used to load login page.
-    var webView: UIWebView = UIWebView()
+    var webView: WKWebView = WKWebView()
 
     /// Override of viewDidLoad to load the login page.
     override open func viewDidLoad() {
         super.viewDidLoad()
         webView.frame = UIScreen.main.bounds
-        webView.delegate = self
+        webView.navigationDelegate = self
         self.view.addSubview(webView)
         loadAddressURL()
     }
@@ -48,6 +49,21 @@ open class OAuth2WebViewController: UIViewController, UIWebViewDelegate {
 
     func loadAddressURL() {
         let req = URLRequest(url: targetURL)
-        webView.loadRequest(req)
+        webView.load(req)
+    }
+}
+
+extension OAuth2WebViewController: WKNavigationDelegate {
+    
+    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+
+        guard let urlString = (error as NSError).userInfo[NSURLErrorFailingURLStringErrorKey] as? String,
+        let url = URL(string: urlString) else {
+            return
+        }
+
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.openURL(url)
+        }
     }
 }
